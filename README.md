@@ -22,7 +22,7 @@ of the spline.
 
 ### Why DreamTeck Splines?
 Honest answer, it was the first Spline package recommended to me 🤷‍♂️ but more importantly, DreamTeck also comes along with a whole slew of additional tools that let you easily use their splines. 
-Specifically, they provide [Spline Users](https://dreamteck-splines.netlify.app/#/./pages/using_splines/using_splines) which allow you to apply their Spline's in a whole 'nother way of slew of ways.
+Specifically, they provide [Spline Users](https://dreamteck-splines.netlify.app/#/./pages/using_splines/using_splines) which allow you to apply their Spline's in a whole 'nother slew of ways.
 
 See their full documentation [here](https://dreamteck-splines.netlify.app/#/).
 
