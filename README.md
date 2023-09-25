@@ -28,10 +28,7 @@ See their full documentation [here](https://dreamteck-splines.netlify.app/#/).
 
 ### Installation
 
-First, open up Unity's package manager and add the package via **github URL**. This will open a prompt where you'll want to paste the following URL: https://github.com/jbakeacake/EdgeFinder_Tool.git \
-Click **add** and Unity will add the tool to your project files. That's it!
-
-Additionally, you can just download/copy the `EdgeFinder.cs` file and paste it into your project.
+Installation is little bit tricky with this dependencies, and since I'm not crazy devoted to this project yet, you can just download/copy the `EdgeFinder.cs` and `DebugUtilities.cs` files and paste them into your project.
 
 ---
 
