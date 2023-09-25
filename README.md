@@ -28,7 +28,7 @@ See their full documentation [here](https://dreamteck-splines.netlify.app/#/).
 
 ### Installation
 
-Installation is little bit tricky with these dependencies, and since I'm not crazy devoted to this project yet, you can just download/copy the `EdgeFinder.cs` and `DebugUtilities.cs` files and paste them into your project.
+Installation is little bit tricky with these dependencies. For now, you can just download/copy the `EdgeFinder.cs` and `DebugUtilities.cs` files and paste them into your project.
 
 ---
 
