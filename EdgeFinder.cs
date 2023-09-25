@@ -4,7 +4,7 @@ using Dreamteck.Splines; // Make sure you have Dreamteck Splines installed
 using NaughtyAttributes; // (Optional) Using NaughtyAttributes to create simple in-editor buttons
 using UnityEngine;
 
-namespace Utility
+namespace CakeDev
 {
     [RequireComponent(typeof(MeshCollider))]
     public class EdgeFinder : MonoBehaviour
