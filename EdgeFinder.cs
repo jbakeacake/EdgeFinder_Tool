@@ -10,7 +10,7 @@ namespace CakeDev
     public class EdgeFinder : MonoBehaviour
     {
         [SerializeField] private Spline.Type defaultSplineType = Spline.Type.CatmullRom;
-        [SerializeField] private LayerMask splineLayer;
+        [SerializeField] private string splineLayer = "Spline";
         [SerializeField] private float ledgeColliderHeight = 0.2f;
         [SerializeField] private bool drawAllColoredVertices = false;
         [SerializeField] private bool drawContiguousPoints = false;
@@ -126,7 +126,7 @@ namespace CakeDev
             
             // Create a spline object using our contiguous points:
             GameObject splineObject = new GameObject("Spline");
-            splineObject.layer = splineLayer;
+            splineObject.layer = LayerMask.NameToLayer(splineLayer);
             splineObject.transform.SetParent(parent.transform);
             
             SplineComputer spline = splineObject.AddComponent<SplineComputer>();
