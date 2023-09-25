@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
-using Dreamteck.Splines; // Make sure you have Dreamteck Splines installed
-using NaughtyAttributes; // (Optional) Using NaughtyAttributes to create simple in-editor buttons
+using Dreamteck.Splines;
+using NaughtyAttributes;
 using UnityEngine;
 
 namespace CakeDev
@@ -10,29 +10,24 @@ namespace CakeDev
     public class EdgeFinder : MonoBehaviour
     {
         [SerializeField] private Spline.Type defaultSplineType = Spline.Type.CatmullRom;
-        [SerializeField] 
-        private string splineLayer = "Spline";
+        [SerializeField] private LayerMask splineLayer;
         [SerializeField] private float ledgeColliderHeight = 0.2f;
         [SerializeField] private bool drawAllColoredVertices = false;
         [SerializeField] private bool drawContiguousPoints = false;
         [SerializeField] private bool drawLedgeMesh = false;
-
+        [SerializeField] private Material debugMaterial;
+        
         private readonly HashSet<Vector3> _filledPositions = new();
 
         private List<SplineComputer> splines = new();
         private MeshFilter _meshFilter;
         private bool _started;
-
-        private Material pink;
-        private Material red;
         private Vector3[] vertices;
 
         [Button("Generate Spline")] // Remove this if you don't have NaughtyAttributes asset
         public void GenerateSplines()
         {
             _meshFilter = GetComponent<MeshFilter>();
-            pink = Resources.Load<Material>("Material/Pink");
-            red = Resources.Load<Material>("Material/Red");
             ResetDrawVertices();
 
             Mesh mesh = _meshFilter.sharedMesh;
@@ -64,8 +59,6 @@ namespace CakeDev
         [Button("Draw Spline Tangents")]
         public void DrawTangents()
         {
-            pink = Resources.Load<Material>("Material/Pink");
-            red = Resources.Load<Material>("Material/Red");
             if (splines.Count == 0)
             {
                 GenerateSplines();
@@ -77,7 +70,7 @@ namespace CakeDev
                 spline.GetSamples(samples);
                 foreach (SplineSample sample in samples.samples)
                 {
-                    CreateSphere(sample.position, -1, pink, transform);
+                    CreateSphere(sample.position, -1, debugMaterial, transform);
                     DebugUtilities.DrawArrow(sample.position, sample.forward);
                 }
             }
@@ -106,8 +99,8 @@ namespace CakeDev
                 {
                     Vector3 p1 = vertices[edge.v1];
                     Vector3 p2 = vertices[edge.v2];
-                    CreateSphere(p1, vIndex, red, vertexGameObject.transform, "Vertex.p1");
-                    CreateSphere(p2, vIndex, red, vertexGameObject.transform, "Vertex.p2");
+                    CreateSphere(p1, vIndex, debugMaterial, vertexGameObject.transform, "Vertex.p1");
+                    CreateSphere(p2, vIndex, debugMaterial, vertexGameObject.transform, "Vertex.p2");
                     vIndex++;
                 }
             }
@@ -126,14 +119,14 @@ namespace CakeDev
                 int n = 0;
                 foreach (Vector3 contiguousPoint in contiguousPoints)
                 {
-                    CreateSphere(contiguousPoint, n, pink, edgeVertexObject.transform);
+                    CreateSphere(contiguousPoint, n, debugMaterial, edgeVertexObject.transform);
                     n++;
                 }
             }
             
             // Create a spline object using our contiguous points:
             GameObject splineObject = new GameObject("Spline");
-            splineObject.layer = LayerMask.NameToLayer(splineLayer);
+            splineObject.layer = splineLayer;
             splineObject.transform.SetParent(parent.transform);
             
             SplineComputer spline = splineObject.AddComponent<SplineComputer>();
@@ -155,7 +148,7 @@ namespace CakeDev
             {
                 MeshFilter mf = splineObject.AddComponent<MeshFilter>();
                 MeshRenderer mr = splineObject.AddComponent<MeshRenderer>();
-                mr.materials = new []{ pink };
+                mr.materials = new []{ debugMaterial };
                 mf.mesh = edgeMesh;
             }
         }
@@ -365,12 +358,12 @@ namespace CakeDev
             _filledPositions.Clear();
         }
 
-        private void CreateSphere(Vector3 position, int v1, Material pink, Transform parent,
+        private void CreateSphere(Vector3 position, int v1, Material material, Transform parent,
             string sphereName = "Vertex")
         {
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.name = $"{sphereName}.{v1}";
-            sphere.GetComponent<MeshRenderer>().SetMaterials(new List<Material>() {pink});
+            sphere.GetComponent<MeshRenderer>().SetMaterials(new List<Material>() { material });
             sphere.transform.SetParent(parent);
             sphere.transform.position = position;
             sphere.transform.localScale *= 0.1f;
