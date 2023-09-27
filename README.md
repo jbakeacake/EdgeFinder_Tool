@@ -5,6 +5,10 @@
 
 ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/84df0f74-20d8-4bb1-9fce-4c17d7cf82bd)
 
+## Changelog
+
+You can find the changelog [here](CHANGELOG.md).
+
 ## Getting Started
 
 ### What is it?
