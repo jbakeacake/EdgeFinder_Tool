@@ -21,7 +21,7 @@ of the spline.
 - [Probuilder](https://unity.com/features/probuilder): This comes out of the box on Unity's asset registry. We use this to help select edge loops and paint vertex-colors onto those edges.
 
 ### Why DreamTeck Splines?
-Honest answer, it was the first Spline package recommended to me 🤷‍♂️ but more importantly, DreamTeck also comes along with a whole slew of additional tools that let you easily use their splines. 
+Honest answer, it was the first Spline package recommended to me 🤷‍♂️ but more importantly: it's free! Also, DreamTeck also comes along with a whole slew of additional tools that let you easily use their splines. 
 Specifically, they provide [Spline Users](https://dreamteck-splines.netlify.app/#/./pages/using_splines/using_splines) which allow you to apply their Spline's in a whole 'nother slew of ways.
 
 See their full documentation [here](https://dreamteck-splines.netlify.app/#/).
@@ -34,6 +34,12 @@ Installation is little bit tricky with these dependencies. For now, you can just
 
 ### How do I use this thing?
 
+> ℹ️ You can skip steps 0 & 1 if you've already marked your vertex colors in a separate program (like Blender).
+
+#### Step 0. Probuilderize!
+Probuilder allows you to ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/626478b4-60da-49c9-8231-9bd9760cd6f9) almost any gameobject you want. This step is required so we can perform some
+edge selects to mark our edges with vertex colors.
+
 #### Step 1. Mark your Edges!
 Before we mess around with the `EdgeFinder`, we first want to make sure we've gone through our mesh, and marked the appropriate edges we want to generate a spline for with a unique color. To test things
 out, I've gone ahead and created a simple pipe using Probuilder's tools.
@@ -43,7 +49,7 @@ out, I've gone ahead and created a simple pipe using Probuilder's tools.
 Next, we'll want to select some edges to generate our spline along. Go ahead and select the ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/6c9b15c9-fb18-478f-9597-ad34677f450b) Edge Tool and begin picking
 out some edges. Probuilder makes things a bit easy with their ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/24677917-5f04-4d9a-be78-d4041384c13c) tool.
 
-With those edges selected, go ahead and select Probuilder's ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/62bc8f36-5400-48f5-95ee-ff2d9584fb69) vertex color picker, and then apply any color you'd like.
+With those edges selected, go ahead and select Probuilder's ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/62bc8f36-5400-48f5-95ee-ff2d9584fb69) vertex color picker, and then apply any color you'd like. For now I'm going to choose red.
 
 > ℹ️ It's important to note that this tool relies on vertex colors to determine the unique edges for a spline. If you're using a shader that depends on those values, you may need to look into modifying the `EdgeFinder` algorithm to support
 > edge finding via a different color map (e.g. a texture).
@@ -90,15 +96,17 @@ You can read more about DreamTeck's spline types [here](https://dreamteck-spline
 
 ---
 
-#### Spline Layer : LayerMask
+#### Spline Layer : string
 This is the Unity layer that the spline and it's associated mesh collider will live on. It's recommended that you add this to a specific layer for querying (e.g. "Spline", "ClimbableLedge", "EdgeSpline", etc.).
+
+⭐For some reason, Unity 2022.3 does **not** like using LayerMasks during in-editor operations. Leaving this as a string until a solution is found.
 
 ---
 
-#### Ledge Collider Height : float
+#### Ledge Collider Radius : float
 This is a float value that will determine the height of the ledge mesh collider that gets generated along with the spline. This mesh collider is built in the **downwards** direction along the normal of the spline's control point.
 
-🚧 Mesh Collider generation is still a work in progress. In order to properly query the mesh collider, you'll have to make sure you have **Query Hit Backfaces** turned on in Unity's Project Settings. (Edit > Project Settings > Physics > Set "Query Hit Backfaces" to True).
+⭐Mesh Collider generation now uses DreamTeck's `TubeGenerator` to create a the ledge mesh.
 
 ---
 
@@ -132,6 +140,6 @@ This is a debug tool that iterate through each control point on the generated sp
 
 ---
 
-#### Clear Children (🚧 Workshopping a better solution for resetting)
-:warning: Destroys all the children of the GameObject! :warning: \
-This effectively resets the object for spline generation. Due to laziness, I'm currently just destroying every child transform of the parent object.
+#### Reset
+:warning: Destroys all generated objects during spline generation! :warning: \
+This effectively resets the object for spline generation; it will destroy only generated objects from spline generation.
