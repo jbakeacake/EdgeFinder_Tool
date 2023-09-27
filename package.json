@@ -1,0 +1,19 @@
+{
+  "name": "edgefinder_tool",
+  "version": "1.0.0",
+  "description": "A simple tool for generating and mapping a spline to a mesh edge",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbakeacake/EdgeFinder_Tool.git"
+  },
+  "author": "CakeDev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jbakeacake/EdgeFinder_Tool/issues"
+  },
+  "homepage": "https://github.com/jbakeacake/EdgeFinder_Tool#readme"
+}
