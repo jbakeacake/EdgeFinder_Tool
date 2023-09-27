@@ -59,6 +59,7 @@ With those edges selected, go ahead and select Probuilder's ![image](https://git
 > edge finding via a different color map (e.g. a texture).
 
 If you want to double check that the vertex color was applied correctly, you can set the mesh's material to Unity's `UnlitVertexColor.mat`. Adding that material, your object should look something like this:
+
 ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/12ec0581-120c-46c4-b388-283820d9e42e)
 
 #### Step 2. Add EdgeFinder.cs and Generate a Spline
@@ -68,16 +69,16 @@ Once you've added the tool to your project, you should be able to add the `EdgeF
 
 After adding the `EdgeFinder` script to one of your GameObjects, you should see a few options related to generating a spline.
 
-![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/674a0a04-73f1-4384-8773-6790778fecf6)
+![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/845c590d-b268-4958-902c-a3992e8190c3)
 
-For now, let's ramp up the **Ledge Collider Height** value to **0.1** and generate our spline! Simply click the "Generate Spline" button and you should see some child objects populate in your object's hierarchy.
+For now, let's ramp up the **Ledge Collider Radius** value to **0.5** and generate our spline! Simply click the "Generate Spline" button and you should see some child objects populate in your object's hierarchy.
 
 ![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/3afd58a0-86ce-4501-8abe-45285c9f30fa)
 
 The first object that gets generated is the unique color value of the edge loop we defined out in step 1. Inside that is our generated spline and it's mesh collider! Highlighting the **Spline** object will enable DreamTeck's spline editor and it'll 
 give us a quick preview of the Mesh Collider that was generated.
 
-![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/5f0704f1-92c2-4bec-836f-10c276060d6f)
+![image](https://github.com/jbakeacake/EdgeFinder_Tool/assets/34492737/0a5d550d-22be-4be4-aa4b-0e34660261d9)
 
 If everything goes smoothly, you'll have successfully generated a spline for your mesh's edges! Feel free to add more loops with their own color to test things out.
 
