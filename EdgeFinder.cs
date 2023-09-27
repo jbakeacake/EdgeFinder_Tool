@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Dreamteck.Splines;
 using NaughtyAttributes;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace CakeDev
@@ -11,15 +12,13 @@ namespace CakeDev
     {
         [SerializeField] private Spline.Type defaultSplineType = Spline.Type.CatmullRom;
         [SerializeField] private string splineLayer = "Spline";
-        [SerializeField] private float ledgeColliderHeight = 0.2f;
+        [SerializeField] private float ledgeColliderRadius = 0.1f;
         [SerializeField] private bool drawAllColoredVertices = false;
         [SerializeField] private bool drawContiguousPoints = false;
         [SerializeField] private bool drawLedgeMesh = false;
         [SerializeField] private Material debugMaterial;
         
-        private readonly HashSet<Vector3> _filledPositions = new();
-
-        private List<SplineComputer> splines = new();
+        private List<GameObject> _generatedObjects = new();
         private MeshFilter _meshFilter;
         private bool _started;
         private Vector3[] vertices;
@@ -28,7 +27,7 @@ namespace CakeDev
         public void GenerateSplines()
         {
             _meshFilter = GetComponent<MeshFilter>();
-            ResetDrawVertices();
+            ClearChildren();
 
             Mesh mesh = _meshFilter.sharedMesh;
             vertices = mesh.vertices.Select(it => transform.TransformPoint(it)).ToArray();
@@ -59,18 +58,21 @@ namespace CakeDev
         [Button("Draw Spline Tangents")]
         public void DrawTangents()
         {
-            if (splines.Count == 0)
+            if (_generatedObjects.Count == 0)
             {
                 GenerateSplines();
             }
-            
+
+            List<SplineComputer> splines = _generatedObjects
+                .Select(it => it.GetComponent<SplineComputer>())
+                .NotNull()
+                .ToList();
             foreach (SplineComputer spline in splines)
             {
                 SampleCollection samples = new SampleCollection();
                 spline.GetSamples(samples);
                 foreach (SplineSample sample in samples.samples)
                 {
-                    CreateSphere(sample.position, -1, debugMaterial, transform);
                     DebugUtilities.DrawArrow(sample.position, sample.forward);
                 }
             }
@@ -80,8 +82,12 @@ namespace CakeDev
         [Button("Clear Children")]
         public void ClearChildren()
         {
-            ResetDrawVertices();
-            splines.Clear();
+            foreach (GameObject go in _generatedObjects)
+            {
+                DestroyImmediate(go);
+            }
+            
+            _generatedObjects.Clear();
         }
 
         private void GenerateEdgeLoopSpline(Color color, List<Edge> edges)
@@ -89,6 +95,7 @@ namespace CakeDev
             GameObject parent = new GameObject($"{color}");
             parent.transform.SetParent(transform);
             parent.transform.localPosition = Vector3.zero;
+            _generatedObjects.Add(parent);
             
             if (drawAllColoredVertices)
             {
@@ -135,10 +142,10 @@ namespace CakeDev
                 .Select(CreateSplinePoint)
                 .ToArray();
             spline.SetPoints(points);
-            splines.Add(spline);
+            _generatedObjects.Add(splineObject);
 
             // Create the edge colliders:
-            Mesh edgeMesh = BuildEdgeMesh(points, contiguousPoints);
+            Mesh edgeMesh = BuildEdgeMesh(splineObject);
 
             MeshCollider edgeCollider = splineObject.AddComponent<MeshCollider>();
             edgeCollider.convex = false;
@@ -228,53 +235,21 @@ namespace CakeDev
             return contiguousPoints;
         }
 
-        private Mesh BuildEdgeMesh(SplinePoint[] points, LinkedList<Vector3> contiguousPoints)
+        private Mesh BuildEdgeMesh(GameObject parent)
         {
-            Mesh mesh = new Mesh();
-            Vector3[] pointsA = points
-                .Select(p => p.position)
-                .ToArray();
-            Vector3[] pointsB = points
-                .Select(it => it.position + -1f * it.normal * ledgeColliderHeight)
-                .ToArray(); // shifting the y-value down along the normal is the simplest way to create a duplicate edge for our mesh collider
-
-            // Build out our vertices:
-            List<Vector3> verts = new();
-            for (int i = 0; i < contiguousPoints.Count - 1; i++)
-            {
-                // Get all points that make up a quad:
-                Vector3 a1, a2, b1, b2;
-                a1 = pointsA[i];
-                a2 = pointsA[i + 1];
-                b1 = pointsB[i];
-                b2 = pointsB[i + 1];
-                
-                // Insert the quad:
-                verts.Add(a1); // i = 0
-                verts.Add(a2); // i = 1
-                verts.Add(b1); // i = 2
-                verts.Add(b2); // i = 3
-            }
-
-            // Build out our tris per quad in clockwise fashion:
-            List<int> tris = new List<int>();
-            for (int i = 0; i < verts.Count; i += 4)
-            {
-                // Insert the first:
-                tris.Add(i);
-                tris.Add(i + 1);
-                tris.Add(i + 2);
-                
-                // Insert the other:
-                tris.Add(i + 1);
-                tris.Add(i + 3);
-                tris.Add(i + 2);
-            }
+            TubeGenerator tubeGenerator = parent.AddComponent<TubeGenerator>();
+            tubeGenerator.size = ledgeColliderRadius;
+            tubeGenerator.sides = 6;
+            tubeGenerator.capMode = TubeGenerator.CapMethod.Flat;
             
-            mesh.vertices = verts.ToArray();
-            mesh.triangles = tris.ToArray();
+            Mesh tubeMesh = parent.GetComponent<MeshFilter>().sharedMesh;
+            
+            // Clean up TubeGenerator Components:
+            DestroyImmediate(parent.GetComponent<TubeGenerator>());
+            DestroyImmediate(parent.GetComponent<MeshRenderer>());
+            DestroyImmediate(parent.GetComponent<MeshFilter>());
 
-            return mesh;
+            return tubeMesh;
         }
         
         private bool HasUniquePointsFrom(Edge current, Edge other)
@@ -346,16 +321,6 @@ namespace CakeDev
 
             // filter on value (true if unique, false otherwise), then select edge tuple.
             return edges.Where(e => e.Value).Select(e => new Edge(e.Key.Item1, e.Key.Item2)).ToList();
-        }
-
-        private void ResetDrawVertices()
-        {
-            for (int i = transform.childCount - 1; i >= 0; i--)
-            {
-                DestroyImmediate(transform.GetChild(i).gameObject);
-            }
-
-            _filledPositions.Clear();
         }
 
         private void CreateSphere(Vector3 position, int v1, Material material, Transform parent,
