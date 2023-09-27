@@ -79,8 +79,8 @@ namespace CakeDev
 
         }
 
-        [Button("Clear Children")]
-        public void ClearChildren()
+        [Button("Reset")]
+        public void ClearGeneratedObjects()
         {
             foreach (GameObject go in _generatedObjects)
             {
