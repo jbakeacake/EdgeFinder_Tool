@@ -4,6 +4,7 @@ using Dreamteck.Splines;
 using NaughtyAttributes;
 using Unity.VisualScripting;
 using UnityEngine;
+using ColorUtility = UnityEngine.ColorUtility;
 
 namespace CakeDev
 {
@@ -11,14 +12,20 @@ namespace CakeDev
     public class EdgeFinder : MonoBehaviour
     {
         [SerializeField] private Spline.Type defaultSplineType = Spline.Type.CatmullRom;
-        [SerializeField] private string splineLayer = "Spline";
+        [SerializeField] private string splineLayer = "Spline"; // Unity doesn't like setting layermasks during editor mode, leaving this as a string for now
         [SerializeField] private float ledgeColliderRadius = 0.1f;
         [SerializeField] private bool drawAllColoredVertices = false;
         [SerializeField] private bool drawContiguousPoints = false;
         [SerializeField] private bool drawLedgeMesh = false;
         [SerializeField] private Material debugMaterial;
-        
-        private List<GameObject> _generatedObjects = new();
+
+        private static readonly string PREFIX = "EdgeFinder-Tool";
+
+        private List<GameObject> GeneratedObjects => GetComponentsInChildren<Transform>()
+            .Where(t => t.name.Contains(PREFIX) && t.gameObject != gameObject)
+            .Select(t => t.gameObject)
+            .ToList(); // I hate this, but I'm not sure how to handle object resets between Unity play mode -> editor mode (i.e. too lazy)
+
         private MeshFilter _meshFilter;
         private bool _started;
         private Vector3[] vertices;
@@ -27,7 +34,7 @@ namespace CakeDev
         public void GenerateSplines()
         {
             _meshFilter = GetComponent<MeshFilter>();
-            ClearChildren();
+            ClearGeneratedObjects();
 
             Mesh mesh = _meshFilter.sharedMesh;
             vertices = mesh.vertices.Select(it => transform.TransformPoint(it)).ToArray();
@@ -37,6 +44,14 @@ namespace CakeDev
             HashSet<Color> uniqueVertexColors = new HashSet<Color>(
                 vertexColors.Distinct().Where(color => color != Color.white).ToList()
             );
+
+            if (uniqueVertexColors.Count == 0)
+            {
+                Debug.LogError(
+                    $"ERROR! GameObject={name} has no unique vertex colors were found on the mesh! Please make sure your mesh has at least 1 vertex-colored edge.",
+                    this
+                );
+            }
 
             // Group edges by their vertex color:
             Dictionary<Color, List<Edge>> edgeLoops = new Dictionary<Color, List<Edge>>();
@@ -58,12 +73,12 @@ namespace CakeDev
         [Button("Draw Spline Tangents")]
         public void DrawTangents()
         {
-            if (_generatedObjects.Count == 0)
+            if (GeneratedObjects.Count == 0)
             {
                 GenerateSplines();
             }
 
-            List<SplineComputer> splines = _generatedObjects
+            List<SplineComputer> splines = GeneratedObjects
                 .Select(it => it.GetComponent<SplineComputer>())
                 .NotNull()
                 .ToList();
@@ -76,27 +91,25 @@ namespace CakeDev
                     DebugUtilities.DrawArrow(sample.position, sample.forward);
                 }
             }
-
         }
 
         [Button("Reset")]
         public void ClearGeneratedObjects()
         {
-            foreach (GameObject go in _generatedObjects)
+            foreach (GameObject go in GeneratedObjects)
             {
                 DestroyImmediate(go);
             }
-            
-            _generatedObjects.Clear();
+
+            GeneratedObjects.Clear();
         }
 
         private void GenerateEdgeLoopSpline(Color color, List<Edge> edges)
         {
-            GameObject parent = new GameObject($"{color}");
+            GameObject parent = new GameObject($"{PREFIX}.{ColorUtility.ToHtmlStringRGB(color)}");
             parent.transform.SetParent(transform);
             parent.transform.localPosition = Vector3.zero;
-            _generatedObjects.Add(parent);
-            
+
             if (drawAllColoredVertices)
             {
                 int vIndex = 0;
@@ -130,19 +143,18 @@ namespace CakeDev
                     n++;
                 }
             }
-            
+
             // Create a spline object using our contiguous points:
             GameObject splineObject = new GameObject("Spline");
             splineObject.layer = LayerMask.NameToLayer(splineLayer);
             splineObject.transform.SetParent(parent.transform);
-            
+
             SplineComputer spline = splineObject.AddComponent<SplineComputer>();
             spline.type = defaultSplineType;
             SplinePoint[] points = contiguousPoints
                 .Select(CreateSplinePoint)
                 .ToArray();
             spline.SetPoints(points);
-            _generatedObjects.Add(splineObject);
 
             // Create the edge colliders:
             Mesh edgeMesh = BuildEdgeMesh(splineObject);
@@ -150,12 +162,12 @@ namespace CakeDev
             MeshCollider edgeCollider = splineObject.AddComponent<MeshCollider>();
             edgeCollider.convex = false;
             edgeCollider.sharedMesh = edgeMesh;
-            
+
             if (drawLedgeMesh)
             {
                 MeshFilter mf = splineObject.AddComponent<MeshFilter>();
                 MeshRenderer mr = splineObject.AddComponent<MeshRenderer>();
-                mr.materials = new []{ debugMaterial };
+                mr.materials = new[] {debugMaterial};
                 mf.mesh = edgeMesh;
             }
         }
@@ -182,7 +194,7 @@ namespace CakeDev
 
             return uniqueEdges;
         }
-        
+
         private LinkedList<Vector3> BuildContiguousPoints(List<Edge> uniqueEdgesList)
         {
             HashSet<Edge> usedEdges = new HashSet<Edge>();
@@ -194,15 +206,15 @@ namespace CakeDev
             usedEdges.Add(first);
             contiguousPoints.AddFirst(start);
             contiguousPoints.AddLast(end);
-            
+
             for (int i = 0; i < uniqueEdgesList.Count; i++)
             {
                 Edge nextEdge = uniqueEdgesList[i];
                 if (usedEdges.Contains(nextEdge)) continue;
-                
+
                 start = contiguousPoints.First.Value;
                 end = contiguousPoints.Last.Value;
-                
+
                 Vector3 nextV1 = vertices[nextEdge.v1];
                 Vector3 nextV2 = vertices[nextEdge.v2];
 
@@ -211,7 +223,7 @@ namespace CakeDev
                     contiguousPoints.AddFirst(nextV2);
                     usedEdges.Add(nextEdge);
                     i = 0;
-                } 
+                }
                 else if (start == nextV2) // Check for overlaps with the starting point:
                 {
                     contiguousPoints.AddFirst(nextV1);
@@ -241,9 +253,9 @@ namespace CakeDev
             tubeGenerator.size = ledgeColliderRadius;
             tubeGenerator.sides = 6;
             tubeGenerator.capMode = TubeGenerator.CapMethod.Flat;
-            
+
             Mesh tubeMesh = parent.GetComponent<MeshFilter>().sharedMesh;
-            
+
             // Clean up TubeGenerator Components:
             DestroyImmediate(parent.GetComponent<TubeGenerator>());
             DestroyImmediate(parent.GetComponent<MeshRenderer>());
@@ -251,7 +263,7 @@ namespace CakeDev
 
             return tubeMesh;
         }
-        
+
         private bool HasUniquePointsFrom(Edge current, Edge other)
         {
             // if we overlap on the v1 point:
@@ -289,7 +301,7 @@ namespace CakeDev
             point.normal = Vector3.up;
             point.size = 1f;
             point.color = Color.white;
-            
+
             return point;
         }
 
@@ -328,7 +340,7 @@ namespace CakeDev
         {
             GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             sphere.name = $"{sphereName}.{v1}";
-            sphere.GetComponent<MeshRenderer>().SetMaterials(new List<Material>() { material });
+            sphere.GetComponent<MeshRenderer>().SetMaterials(new List<Material>() {material});
             sphere.transform.SetParent(parent);
             sphere.transform.position = position;
             sphere.transform.localScale *= 0.1f;
