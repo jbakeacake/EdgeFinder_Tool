@@ -220,11 +220,11 @@ namespace CakeDev
 
                 if (start == nextV1)
                 {
-                    contiguousPoints.AddFirst(nextV2);
+                    contiguousPoints.AddFirst(nextV2); // Check for overlaps with the starting point:
                     usedEdges.Add(nextEdge);
                     i = 0;
                 }
-                else if (start == nextV2) // Check for overlaps with the starting point:
+                else if (start == nextV2) 
                 {
                     contiguousPoints.AddFirst(nextV1);
                     usedEdges.Add(nextEdge);
